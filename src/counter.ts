@@ -15,6 +15,7 @@ const host = document.querySelector<HTMLDivElement>("#counter-panel-host")!;
 const diagnostic = document.querySelector<HTMLParagraphElement>(
   "#counter-diagnostic",
 )!;
+const shieldEvents = new EventTarget();
 const shieldCapacity = 10;
 let shieldCharge = 0;
 let panel: HTMLParagraphElement | null = null;
@@ -58,10 +59,13 @@ function setShieldCharge(next: number) {
   const bounded = Math.max(0, Math.min(shieldCapacity, next));
   if (bounded === shieldCharge) return;
   shieldCharge = bounded;
-  const snapshot = takeShieldSnapshot();
-  drawMeter(snapshot);
-  if (panel) updateStats(snapshot);
+  shieldEvents.dispatchEvent(new Event("shield-changed"));
+  if (panel) updateStats(takeShieldSnapshot());
 }
+
+shieldEvents.addEventListener("shield-changed", () => {
+  drawMeter(takeShieldSnapshot());
+});
 
 document.querySelector<HTMLButtonElement>("#counter-less")!.onclick = () => {
   setShieldCharge(shieldCharge - 1);
