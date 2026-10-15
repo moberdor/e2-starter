@@ -5,15 +5,27 @@ type Command = {
   execute: () => void;
 };
 
+type Direction = {
+  name: string;
+  offsetX: number;
+  offsetY: number;
+};
+
 const canvas = document.querySelector<HTMLCanvasElement>("#rover-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>("#rover-readout")!;
-const headings = ["North", "East", "South", "West"];
+const directions: Direction[] = [
+  { name: "North", offsetX: 0, offsetY: -1 },
+  { name: "East", offsetX: 1, offsetY: 0 },
+  { name: "South", offsetX: 0, offsetY: 1 },
+  { name: "West", offsetX: -1, offsetY: 0 },
+];
 let x = 2;
 let y = 2;
-let direction = 0;
+let directionIndex = 0;
 
 function drawRover() {
+  const facing = directions[directionIndex];
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = "#718881";
   for (let row = 0; row < 5; row++) {
@@ -23,7 +35,7 @@ function drawRover() {
   }
   ctx.save();
   ctx.translate(38 + x * 56, 38 + y * 56);
-  ctx.rotate(direction * Math.PI / 2);
+  ctx.rotate(directionIndex * Math.PI / 2);
   ctx.fillStyle = "#27766b";
   ctx.beginPath();
   ctx.moveTo(0, -20);
@@ -32,25 +44,26 @@ function drawRover() {
   ctx.closePath();
   ctx.fill();
   ctx.restore();
-  readout.textContent = `Position: (${x}, ${y}) · Facing: ${
-    headings[direction]
-  }`;
+  readout.textContent = `Position: (${x}, ${y}) · Facing: ${facing.name}`;
+}
+
+function stepWithinGrid(position: number, offset: number) {
+  return Math.max(0, Math.min(4, position + offset));
 }
 
 const moveForward: Command = {
   label: "Forward",
   execute: () => {
-    if (direction === 0) y = Math.max(0, y - 1);
-    if (direction === 1) x = Math.min(4, x + 1);
-    if (direction === 2) y = Math.min(4, y + 1);
-    if (direction === 3) x = Math.max(0, x - 1);
+    const facing = directions[directionIndex];
+    x = stepWithinGrid(x, facing.offsetX);
+    y = stepWithinGrid(y, facing.offsetY);
   },
 };
 
 const turnRight: Command = {
   label: "Right",
   execute: () => {
-    direction = (direction + 1) % 4;
+    directionIndex = (directionIndex + 1) % directions.length;
   },
 };
 
@@ -68,7 +81,7 @@ document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
-  direction = 0;
+  directionIndex = 0;
   drawRover();
 };
 drawRover();
