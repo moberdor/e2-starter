@@ -14,6 +14,12 @@ type Direction = {
 const canvas = document.querySelector<HTMLCanvasElement>("#rover-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>("#rover-readout")!;
+const pendingList = document.querySelector<HTMLOListElement>("#rover-pending")!;
+const queueStatus = document.querySelector<HTMLParagraphElement>(
+  "#rover-queue-status",
+)!;
+const runButton = document.querySelector<HTMLButtonElement>("#rover-run")!;
+const clearButton = document.querySelector<HTMLButtonElement>("#rover-clear")!;
 const directions: Direction[] = [
   { name: "North", offsetX: 0, offsetY: -1 },
   { name: "East", offsetX: 1, offsetY: 0 },
@@ -23,6 +29,7 @@ const directions: Direction[] = [
 let x = 2;
 let y = 2;
 let directionIndex = 0;
+let pendingCommands: Command[] = [];
 
 function drawRover() {
   const facing = directions[directionIndex];
@@ -67,21 +74,59 @@ const turnRight: Command = {
   },
 };
 
-function runCommand(command: Command) {
-  command.execute();
+function showPendingCommands() {
+  pendingList.replaceChildren();
+  for (const command of pendingCommands) {
+    const item = document.createElement("li");
+    item.textContent = command.label;
+    pendingList.append(item);
+  }
+  if (pendingCommands.length === 0) {
+    queueStatus.textContent = "Empty";
+  } else {
+    queueStatus.textContent = `${pendingCommands.length} pending`;
+  }
+}
+
+function queueCommand(command: Command) {
+  pendingCommands.push(command);
+  showPendingCommands();
+}
+
+function runPendingCommands() {
+  for (const command of pendingCommands) {
+    command.execute();
+  }
+  pendingCommands = [];
   drawRover();
+  showPendingCommands();
+}
+
+function clearPendingCommands() {
+  pendingCommands = [];
+  showPendingCommands();
 }
 
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
-  runCommand(moveForward);
+  queueCommand(moveForward);
 };
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
-  runCommand(turnRight);
+  queueCommand(turnRight);
+};
+runButton.onclick = () => {
+  runPendingCommands();
+};
+clearButton.onclick = () => {
+  clearPendingCommands();
 };
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
   directionIndex = 0;
   drawRover();
+  clearPendingCommands();
 };
+runButton.disabled = false;
+clearButton.disabled = false;
 drawRover();
+showPendingCommands();
