@@ -8,6 +8,12 @@ type ShiftResult = {
   balance: number;
 };
 
+type SupplyRow = {
+  label: string;
+  color: string;
+  resultKey: "production" | "consumption";
+};
+
 const canvas = document.querySelector<HTMLCanvasElement>("#allocation-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>(
@@ -19,6 +25,11 @@ const suppliesPerProducer = 3;
 const suppliesPerCrewMember = 1;
 const startingProducers = 2;
 let supplyProducers = startingProducers;
+
+const supplyRows: SupplyRow[] = [
+  { label: "Production", color: "#27766b", resultKey: "production" },
+  { label: "Consumption", color: "#a44d23", resultKey: "consumption" },
+];
 
 function suppliesMadeBy(producers: number) {
   return producers * suppliesPerProducer;
@@ -66,13 +77,15 @@ function drawSupplyBars(shift: ShiftResult) {
     18,
     76,
   );
-  ctx.fillText(`Production: ${shift.production}`, 18, 102);
-  ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, shift.production * 14, 20);
-  ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${shift.consumption}`, 18, 154);
-  ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, shift.consumption * 14, 20);
+  for (let index = 0; index < supplyRows.length; index++) {
+    const row = supplyRows[index];
+    const amount = shift[row.resultKey];
+    const rowY = 102 + index * 52;
+    ctx.fillStyle = "#233e43";
+    ctx.fillText(`${row.label}: ${amount}`, 18, rowY);
+    ctx.fillStyle = row.color;
+    ctx.fillRect(18, rowY + 8, amount * 14, 20);
+  }
 }
 
 function drawChart(shift: ShiftResult) {
